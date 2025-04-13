@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Attendance Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background: #f7f7f7;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+    }
+    #loginBtn {
+      display: none;
+      margin-top: 10px;
+      padding: 10px;
+      width: 100%;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #syncBtn {
+      margin-top: 20px;
+      padding: 10px;
+      width: 100%;
+      background: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #logList {
+      margin-top: 20px;
+    }
+    p.log-entry {
+      border-bottom: 1px solid #ccc;
+      padding: 8px 0;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Attendance Login</h2>
+
+  <label for="nameSelect">Select Your Name:</label>
+  <select id="nameSelect">
+    <option value="">-- Select --</option>
+    <option value="Adarsh R Jigajinni">Adarsh R Jigajinni</option>
+    <option value="Akhila">Akhila</option>
+    <!-- Add other names as before -->
+  </select>
+
+  <button id="loginBtn">Login</button>
+  <button id="syncBtn">SYNC WITH GOOGLE SHEET</button>
+
+  <div id="logList"></div>
+</div>
+
+<script>
+  const SCRIPT_URL = 'https://script.google.com/a/macros/oneorigin.us/s/AKfycbwM72h3cRTCe0PL_jVzlh0Q8U7T4BWSi6JJUMqdt7fI32W8QiXT3YkMDRMVjAYx3Oegwg/exec'; // Replace with your deployed Apps Script URL
+  const nameSelect = document.getElementById("nameSelect");
+  const loginBtn = document.getElementById("loginBtn");
+  const syncBtn = document.getElementById("syncBtn");
+  const logList = document.getElementById("logList");
+
+  // Store the logged-in users locally
+  let loggedInUsers = [];
+
+  nameSelect.addEventListener("change", () => {
+    loginBtn.style.display = nameSelect.value ? "block" : "none";
+  });
+
+  loginBtn.addEventListener("click", () => {
+    const name = nameSelect.value;
+    const now = new Date();
+    const dateStr = now.toLocaleDateString();
+    const timeStr = now.toLocaleTimeString();
+    const platform = navigator.platform;
+    const userAgent = navigator.userAgent;
+
+    // Log the entry in the log list
+    const logEntry = document.createElement("p");
+    logEntry.classList.add("log-entry");
+    logEntry.innerHTML = `<strong>${name}</strong> logged in at ${dateStr} ${timeStr}<br><small>System: ${platform}<br>Browser: ${userAgent}</small>`;
+    logList.appendChild(logEntry);
+
+    // Store the log data locally
+    loggedInUsers.push({ name, date: dateStr, time: timeStr, system: platform, browser: userAgent });
+
+    // Reset the form
+    nameSelect.value = "";
+    loginBtn.style.display = "none";
+  });
+
+  syncBtn.addEventListener("click", () => {
+    if (loggedInUsers.length === 0) {
+      alert("No logins to sync!");
+      return;
+    }
+
+    // Send logged-in users data to Google Sheets
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ users: loggedInUsers }),
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    }).then(res => res.text())
+      .then(data => {
+        console.log('Sync success:', data);
+        alert("Data synced with Google Sheets!");
+        loggedInUsers = [];  // Clear local logged-in data after syncing
+      })
+      .catch(err => {
+        console.error('Sync error:', err);
+        alert("Error syncing with Google Sheets.");
+      });
+  });
+</script>
+
+</body>
+</html>
